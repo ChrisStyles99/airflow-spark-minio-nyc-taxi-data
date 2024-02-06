@@ -14,11 +14,20 @@ sc = SparkSession.builder.appName('nyc_taxi_raw')\
 print('hola despues de sc')
 df_taxi = sc.read.format("parquet").load('s3a://nyc-taxi-data/yellow_tripdata_2023-01.parquet')
 
-print(df_taxi.show(5))
+df_zone = sc.read.option("inferSchema", "true").option("header", "true").csv('s3a://nyc-taxi-data/taxi+_zone_lookup.csv')
+
+print(df_zone.show(5), df_zone.schema)
 
 df_taxi.write.format("jdbc").mode("overwrite").option("driver", "org.postgresql.Driver")\
         .option("url", "jdbc:postgresql://postgres/nyc_taxi_data")\
         .option("dbtable", "raw.taxi_data")\
+        .option("user", "airflow")\
+        .option("password", "airflow")\
+        .save()
+
+df_zone.write.format("jdbc").mode("overwrite").option("driver", "org.postgresql.Driver")\
+        .option("url", "jdbc:postgresql://postgres/nyc_taxi_data")\
+        .option("dbtable", "raw.taxi_zone")\
         .option("user", "airflow")\
         .option("password", "airflow")\
         .save()
