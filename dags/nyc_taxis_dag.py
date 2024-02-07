@@ -39,4 +39,16 @@ with DAG(
     cmd_timeout=7200
   )
 
-  spark_parquet_to_psql >> spark_raw_to_staging
+  spark_staging_to_prepared = SSHOperator(
+    task_id='spark_staging_to_prepared',
+    command="""
+      export JAVA_HOME=/opt/bitnami/java;
+      export SPARK_HOME=/opt/bitnami/spark;
+      export PYSPARK_PYTHON=/opt/bitnami/python/bin/python3;
+      /opt/bitnami/spark/bin/spark-submit --master spark://spark-master:7077 --executor-memory 2G /opt/bitnami/spark/app/staging_to_prepared.py
+    """,
+    ssh_conn_id='spark_ssh_conn',
+    cmd_timeout=7200
+  )
+
+  spark_parquet_to_psql >> spark_raw_to_staging >> spark_staging_to_prepared
